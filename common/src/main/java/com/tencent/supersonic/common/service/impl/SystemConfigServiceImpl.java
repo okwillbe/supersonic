@@ -25,7 +25,7 @@ public class SystemConfigServiceImpl extends ServiceImpl<SystemConfigMapper, Sys
     @Autowired
     private Environment environment;
 
-    // Cache field to store the system configuration
+    // AtomicReference用于实现原子性的对象引用操作。它可以在多线程环境下安全地更新对象引用，而无需使用传统的 synchronized关键字
     private AtomicReference<SystemConfig> cachedSystemConfig = new AtomicReference<>();
 
     @Override
@@ -68,8 +68,15 @@ public class SystemConfigServiceImpl extends ServiceImpl<SystemConfigMapper, Sys
     private SystemConfig convert(SystemConfigDO systemConfigDO) {
         SystemConfig sysParameter = new SystemConfig();
         sysParameter.setId(systemConfigDO.getId());
+
+        // 使用 TypeReference 解决 Java 泛型擦除问题。
+        // 在运行时，List.class 会丢失 <Parameter> 类型信息，导致 Jackson 默认将其反序列化为
+        // List<LinkedHashMap>。
+        // 通过匿名内部类 TypeReference<List<Parameter>> 可以保留完整的泛型类型信息，确保正确转换为 List<Parameter>。
         List<Parameter> parameters = JsonUtil.toObject(systemConfigDO.getParameters(),
-                new TypeReference<List<Parameter>>() {});
+                new TypeReference<List<Parameter>>() {
+                });
+
         sysParameter.setParameters(parameters);
         sysParameter.setAdminList(systemConfigDO.getAdmin());
         return sysParameter;

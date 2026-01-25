@@ -13,7 +13,8 @@
 
     <properties>
         <maven.compiler.source>21</maven.compiler.source>
-        <maven.compiler.target>21</maven.compiler.target>
+        <maven.compiler.target>21</maven.compiler.target>   
+        <!-- 执行程序入口方法 -->
         <start-class>com.tencent.supersonic.StandaloneLauncher</start-class>
     </properties>
     <dependencies>
@@ -114,6 +115,11 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-reload4j</artifactId>
+            <!-- 
+                该依赖是 SLF4J 到 reload4j (Log4j 1.2 的安全替代品) 的桥接器。
+                在此处声明并配合下方的 exclusions 使用，是为了在测试环境中显式禁用该绑定，
+                防止因依赖冲突导致的 "
+             -->
             <version>1.7.36</version>
             <scope>test</scope>
             <exclusions>
@@ -127,6 +133,11 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-properties-migrator</artifactId>
+            <!-- 
+                该依赖用于在 Spring Boot 版本升级期间自动识别和迁移已弃用的配置属性。
+                它会在运行时检测配置文件中的旧属性，并在控制台打印警告和迁移建议，
+                帮助开发者平滑过渡到新版本的配置项，通常设置为 runtime 作用域。
+            -->
             <scope>runtime</scope>
         </dependency>
 
@@ -169,6 +180,7 @@
                         </manifest>
                     </archive>
                     <descriptors>
+                         指定打包描述符
                         <descriptor>../../assembly/build/build.xml</descriptor>
                     </descriptors>
                 </configuration>

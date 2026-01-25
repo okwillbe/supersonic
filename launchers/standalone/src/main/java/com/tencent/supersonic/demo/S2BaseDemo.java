@@ -115,6 +115,7 @@ public abstract class S2BaseDemo implements CommandLineRunner {
 
     protected abstract boolean checkNeedToRun();
 
+    // 有一个现成的数据库，连接地址是这个，账号密码是这个，请你把它纳管起来，以后我要在上面建语义模型
     protected DatabaseResp addDatabaseIfNotExist() {
         List<DatabaseResp> databaseList = databaseService.getDatabaseList(defaultUser);
         if (!CollectionUtils.isEmpty(databaseList)) {
@@ -168,8 +169,7 @@ public abstract class S2BaseDemo implements CommandLineRunner {
 
     protected List<DataSetModelConfig> getDataSetModelConfigs(Long domainId) {
         List<DataSetModelConfig> dataSetModelConfigs = Lists.newArrayList();
-        List<ModelResp> modelByDomainIds =
-                modelService.getModelByDomainIds(Lists.newArrayList(domainId));
+        List<ModelResp> modelByDomainIds = modelService.getModelByDomainIds(Lists.newArrayList(domainId));
 
         for (ModelResp modelResp : modelByDomainIds) {
             DataSetModelConfig dataSetModelConfig = new DataSetModelConfig();

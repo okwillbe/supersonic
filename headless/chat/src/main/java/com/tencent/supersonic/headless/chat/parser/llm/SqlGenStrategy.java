@@ -11,7 +11,9 @@ import org.springframework.stereotype.Service;
 
 /**
  * SqlGenStrategy abstracts generation step so that different LLM prompting strategies can be
- * implemented.
+ * implemented. 实现 InitializingBean的类需重写 afterPropertiesSet()方法。
+ * Spring Bean初始化流程：
+ * 1. 构造器 → 2. 依赖注入 → 3. @PostConstruct方法 → 4. afterPropertiesSet()方法 → 5. 自定义 init-method方法。
  */
 @Service
 public abstract class SqlGenStrategy implements InitializingBean {

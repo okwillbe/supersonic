@@ -9,6 +9,7 @@
         <fileSet>
             <directory>${project.basedir}/src/main/resources</directory>
             <outputDirectory>conf</outputDirectory>
+            <!-- 以 0 开头的数字字面量通常表示 八进制。不带前缀通常表示 十进制。 -->
             <fileMode>0777</fileMode>
             <directoryMode>0755</directoryMode>
         </fileSet>

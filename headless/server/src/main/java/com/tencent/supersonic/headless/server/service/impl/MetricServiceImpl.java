@@ -127,20 +127,19 @@ public class MetricServiceImpl extends ServiceImpl<MetricDOMapper, MetricDO>
         metricReq.createdBy(user.getName());
         MetricDO metricDO = MetricConverter.convert2MetricDO(metricReq);
         metricRepository.createMetric(metricDO);
+        // 发布添加指标的实践
         sendEventBatch(Lists.newArrayList(metricDO), EventType.ADD, user);
         // should update modelDetail as well
         modelService.updateModelByDimAndMetric(metricReq.getModelId(), null,
                 Lists.newArrayList(metricReq), user);
-
 
         return MetricConverter.convert2MetricResp(metricDO);
     }
 
     @Override
     public void createMetricBatch(List<MetricReq> metricReqs, User user) {
-        List<MetricDO> metricDOS =
-                metricReqs.stream().peek(metric -> metric.createdBy(user.getName()))
-                        .map(MetricConverter::convert2MetricDO).collect(Collectors.toList());
+        List<MetricDO> metricDOS = metricReqs.stream().peek(metric -> metric.createdBy(user.getName()))
+                .map(MetricConverter::convert2MetricDO).collect(Collectors.toList());
         metricRepository.createMetricBatch(metricDOS);
         // should update modelDetail as well
         modelService.updateModelByDimAndMetric(metricReqs.get(0).getModelId(), null, metricReqs,
@@ -152,7 +151,8 @@ public class MetricServiceImpl extends ServiceImpl<MetricDOMapper, MetricDO>
     @Override
     public void alterMetricBatch(List<MetricReq> metricReqs, Long modelId, User user) {
         List<MetricResp> metricResps = getMetrics(new MetaFilter(Lists.newArrayList(modelId)));
-        // get all metric in model, only use bizname, because name can be changed to everything
+        // get all metric in model, only use bizname, because name can be changed to
+        // everything
         Map<String, MetricResp> bizNameMap = metricResps.stream()
                 .collect(Collectors.toMap(MetricResp::getBizName, a -> a, (k1, k2) -> k1));
 
@@ -203,7 +203,6 @@ public class MetricServiceImpl extends ServiceImpl<MetricDOMapper, MetricDO>
                 user);
         sendEventBatch(metricDOS, EventType.UPDATE, user);
     }
-
 
     @Override
     public void batchUpdateStatus(MetaBatchReq metaBatchReq, User user) {
@@ -346,15 +345,14 @@ public class MetricServiceImpl extends ServiceImpl<MetricDOMapper, MetricDO>
         if (CollectionUtils.isEmpty(dataSetMapInfoMap)) {
             return metricRespPageInfo;
         }
-        Map<Long, Double> result =
-                dataSetMapInfoMap.values().stream().map(DataSetMapInfo::getMapFields)
-                        .filter(Objects::nonNull).flatMap(Collection::stream)
-                        .filter(schemaElementMatch -> SchemaElementType.METRIC
-                                .equals(schemaElementMatch.getElement().getType()))
-                        .collect(Collectors.toMap(
-                                schemaElementMatch -> schemaElementMatch.getElement().getId(),
-                                SchemaElementMatch::getSimilarity,
-                                (existingValue, newValue) -> existingValue));
+        Map<Long, Double> result = dataSetMapInfoMap.values().stream().map(DataSetMapInfo::getMapFields)
+                .filter(Objects::nonNull).flatMap(Collection::stream)
+                .filter(schemaElementMatch -> SchemaElementType.METRIC
+                        .equals(schemaElementMatch.getElement().getType()))
+                .collect(Collectors.toMap(
+                        schemaElementMatch -> schemaElementMatch.getElement().getId(),
+                        SchemaElementMatch::getSimilarity,
+                        (existingValue, newValue) -> existingValue));
         List<Long> metricIds = new ArrayList<>(result.keySet());
         if (CollectionUtils.isEmpty(result.keySet())) {
             return metricRespPageInfo;
@@ -375,19 +373,17 @@ public class MetricServiceImpl extends ServiceImpl<MetricDOMapper, MetricDO>
         metricFilter.setUserName(user.getName());
         BeanUtils.copyProperties(pageMetricReq, metricFilter);
         if (!CollectionUtils.isEmpty(pageMetricReq.getDomainIds())) {
-            List<ModelResp> modelResps =
-                    modelService.getAllModelByDomainIds(pageMetricReq.getDomainIds());
-            List<Long> modelIds =
-                    modelResps.stream().map(ModelResp::getId).collect(Collectors.toList());
+            List<ModelResp> modelResps = modelService.getAllModelByDomainIds(pageMetricReq.getDomainIds());
+            List<Long> modelIds = modelResps.stream().map(ModelResp::getId).collect(Collectors.toList());
             pageMetricReq.getModelIds().addAll(modelIds);
         }
         metricFilter.setModelIds(pageMetricReq.getModelIds());
         List<Long> collectIds = getCollectIds(pageMetricReq, user);
         List<Long> idsToFilter = getIdsToFilter(pageMetricReq, collectIds);
         metricFilter.setIds(idsToFilter);
-        PageInfo<MetricDO> metricDOPageInfo =
-                PageHelper.startPage(pageMetricReq.getCurrent(), pageMetricReq.getPageSize())
-                        .doSelectPageInfo(() -> queryMetric(metricFilter));
+        PageInfo<MetricDO> metricDOPageInfo = PageHelper
+                .startPage(pageMetricReq.getCurrent(), pageMetricReq.getPageSize())
+                .doSelectPageInfo(() -> queryMetric(metricFilter));
         PageInfo<MetricResp> pageInfo = new PageInfo<>();
         BeanUtils.copyProperties(metricDOPageInfo, pageInfo);
         List<MetricResp> metricResps = convertList(metricDOPageInfo.getList(), collectIds);
@@ -413,6 +409,7 @@ public class MetricServiceImpl extends ServiceImpl<MetricDOMapper, MetricDO>
     public List<MetricResp> getMetrics(MetaFilter metaFilter) {
         MetricFilter metricFilter = new MetricFilter();
         BeanUtils.copyProperties(metaFilter, metricFilter);
+        //根据查询过滤器查询这个所有指标
         List<MetricResp> metricResps = convertList(queryMetric(metricFilter));
 
         if (!CollectionUtils.isEmpty(metaFilter.getFieldsDepend())) {
@@ -426,10 +423,8 @@ public class MetricServiceImpl extends ServiceImpl<MetricDOMapper, MetricDO>
     }
 
     private List<Long> getCollectIds(PageMetricReq pageMetricReq, User user) {
-        List<CollectDO> collectList =
-                collectService.getCollectionList(user.getName(), TypeEnums.METRIC);
-        List<Long> collectIds =
-                collectList.stream().map(CollectDO::getCollectId).collect(Collectors.toList());
+        List<CollectDO> collectList = collectService.getCollectionList(user.getName(), TypeEnums.METRIC);
+        List<Long> collectIds = collectList.stream().map(CollectDO::getCollectId).collect(Collectors.toList());
         if (pageMetricReq.isHasCollect()) {
             if (CollectionUtils.isEmpty(collectIds)) {
                 return Lists.newArrayList(-1L);
@@ -509,8 +504,7 @@ public class MetricServiceImpl extends ServiceImpl<MetricDOMapper, MetricDO>
         if (CollectionUtils.isEmpty(modelResps)) {
             return;
         }
-        Set<Long> modelIdSet =
-                modelResps.stream().map(ModelResp::getId).collect(Collectors.toSet());
+        Set<Long> modelIdSet = modelResps.stream().map(ModelResp::getId).collect(Collectors.toSet());
         for (MetricResp metricResp : metricResps) {
             if (modelIdSet.contains(metricResp.getModelId())) {
                 metricResp.setHasAdminRes(true);
@@ -539,10 +533,8 @@ public class MetricServiceImpl extends ServiceImpl<MetricDOMapper, MetricDO>
         }
         ModelFilter modelFilter = new ModelFilter(true, Lists.newArrayList(metricDO.getModelId()));
         Map<Long, ModelResp> modelMap = modelService.getModelMap(modelFilter);
-        List<CollectDO> collectList =
-                collectService.getCollectionList(user.getName(), TypeEnums.METRIC);
-        List<Long> collect =
-                collectList.stream().map(CollectDO::getCollectId).collect(Collectors.toList());
+        List<CollectDO> collectList = collectService.getCollectionList(user.getName(), TypeEnums.METRIC);
+        List<Long> collect = collectList.stream().map(CollectDO::getCollectId).collect(Collectors.toList());
         MetricResp metricResp = MetricConverter.convert2MetricResp(metricDO, modelMap, collect);
         fillAdminRes(Lists.newArrayList(metricResp), user);
         return metricResp;
@@ -564,7 +556,8 @@ public class MetricServiceImpl extends ServiceImpl<MetricDOMapper, MetricDO>
                 metricReq.getBizName(), "", metricReq.getDescription());
         String ret = mockAlias.replaceAll("`", "").replace("json", "").replace("\n", "")
                 .replace(" ", "");
-        return JSONObject.parseObject(ret, new TypeReference<List<String>>() {});
+        return JSONObject.parseObject(ret, new TypeReference<List<String>>() {
+        });
     }
 
     @Override
@@ -611,8 +604,8 @@ public class MetricServiceImpl extends ServiceImpl<MetricDOMapper, MetricDO>
 
     @Override
     public void saveMetricQueryDefaultConfig(MetricQueryDefaultConfig defaultConfig, User user) {
-        MetricQueryDefaultConfigDO defaultConfigDO =
-                metricRepository.getDefaultQueryConfig(defaultConfig.getMetricId(), user.getName());
+        MetricQueryDefaultConfigDO defaultConfigDO = metricRepository.getDefaultQueryConfig(defaultConfig.getMetricId(),
+                user.getName());
         if (defaultConfigDO == null) {
             defaultConfigDO = new MetricQueryDefaultConfigDO();
             defaultConfig.createdBy(user.getName());
@@ -628,17 +621,19 @@ public class MetricServiceImpl extends ServiceImpl<MetricDOMapper, MetricDO>
 
     @Override
     public MetricQueryDefaultConfig getMetricQueryDefaultConfig(Long metricId, User user) {
-        MetricQueryDefaultConfigDO metricQueryDefaultConfigDO =
-                metricRepository.getDefaultQueryConfig(metricId, user.getName());
+        MetricQueryDefaultConfigDO metricQueryDefaultConfigDO = metricRepository.getDefaultQueryConfig(metricId,
+                user.getName());
         MetricQueryDefaultConfig metricQueryDefaultConfig = new MetricQueryDefaultConfig();
         BeanMapper.mapper(metricQueryDefaultConfigDO, metricQueryDefaultConfig);
         return metricQueryDefaultConfig;
     }
 
     private void checkExist(List<MetricReq> metricReqs) {
+        // 获取模型id
         Long modelId = metricReqs.get(0).getModelId();
         MetaFilter metaFilter = new MetaFilter();
         metaFilter.setModelIds(Lists.newArrayList(modelId));
+        // 获取这个模型的下面所有指标
         List<MetricResp> metricResps = getMetrics(metaFilter);
         Map<String, MetricResp> bizNameMap = metricResps.stream()
                 .collect(Collectors.toMap(MetricResp::getBizName, a -> a, (k1, k2) -> k1));
@@ -668,8 +663,7 @@ public class MetricServiceImpl extends ServiceImpl<MetricDOMapper, MetricDO>
 
     private List<MetricResp> convertList(List<MetricDO> metricDOS, List<Long> collect) {
         List<MetricResp> metricResps = Lists.newArrayList();
-        List<Long> modelIds =
-                metricDOS.stream().map(MetricDO::getModelId).collect(Collectors.toList());
+        List<Long> modelIds = metricDOS.stream().map(MetricDO::getModelId).collect(Collectors.toList());
         ModelFilter modelFilter = new ModelFilter(false, modelIds);
         Map<Long, ModelResp> modelMap = modelService.getModelMap(modelFilter);
         if (!CollectionUtils.isEmpty(metricDOS)) {
@@ -734,8 +728,7 @@ public class MetricServiceImpl extends ServiceImpl<MetricDOMapper, MetricDO>
     @Override
     public void batchFillMetricDefaultAgg(List<MetricResp> metricResps,
             List<ModelResp> modelResps) {
-        Map<Long, ModelResp> modelRespMap =
-                modelResps.stream().collect(Collectors.toMap(ModelResp::getId, m -> m));
+        Map<Long, ModelResp> modelRespMap = modelResps.stream().collect(Collectors.toMap(ModelResp::getId, m -> m));
         for (MetricResp metricResp : metricResps) {
             fillDefaultAgg(metricResp, modelRespMap.get(metricResp.getModelId()));
         }
@@ -786,8 +779,8 @@ public class MetricServiceImpl extends ServiceImpl<MetricDOMapper, MetricDO>
         List<MetricResp> metricResps = getMetricResps(queryMetricReq, modelIdsByDomainId);
 
         List<DimensionResp> dimensionResps = getDimensionResps(modelIdsByDomainId);
-        Map<Long, DimensionResp> dimensionRespMap =
-                dimensionResps.stream().collect(Collectors.toMap(DimensionResp::getId, d -> d));
+        Map<Long, DimensionResp> dimensionRespMap = dimensionResps.stream()
+                .collect(Collectors.toMap(DimensionResp::getId, d -> d));
 
         // 3. choose ModelCluster
         Set<Long> modelIds = getModelIds(modelIdsByDomainId, metricResps, dimensionResps);
@@ -861,8 +854,7 @@ public class MetricServiceImpl extends ServiceImpl<MetricDOMapper, MetricDO>
     }
 
     private ModelCluster getModelCluster(List<MetricResp> metricResps, Set<Long> modelIds) {
-        Map<String, ModelCluster> modelClusterMap =
-                ModelClusterBuilder.buildModelClusters(new ArrayList<>(modelIds));
+        Map<String, ModelCluster> modelClusterMap = ModelClusterBuilder.buildModelClusters(new ArrayList<>(modelIds));
 
         Map<String, List<SchemaItem>> modelClusterToMatchCount = new HashMap<>();
         for (ModelCluster modelCluster : modelClusterMap.values()) {
@@ -888,8 +880,7 @@ public class MetricServiceImpl extends ServiceImpl<MetricDOMapper, MetricDO>
             result.addAll(modelIdsByDomainId);
             return result;
         }
-        Set<Long> metricModelIds =
-                metricResps.stream().map(entry -> entry.getModelId()).collect(Collectors.toSet());
+        Set<Long> metricModelIds = metricResps.stream().map(entry -> entry.getModelId()).collect(Collectors.toSet());
         result.addAll(metricModelIds);
 
         Set<Long> dimensionModelIds = dimensionResps.stream().map(entry -> entry.getModelId())
