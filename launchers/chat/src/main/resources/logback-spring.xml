@@ -7,6 +7,7 @@
     <!--输出到控制台-->
     <appender name="consoleLog" class="ch.qos.logback.server.ConsoleAppender">
         <encoder>
+            <charset>GBK</charset>
             <pattern>%d{HH:mm:ss} [%thread] %-5level %logger{36} %line  - %msg%n</pattern>
         </encoder>
     </appender>
